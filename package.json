@@ -66,6 +66,7 @@
     "react-dom": "^16.8.6",
     "react-helmet": "^5.2.1",
     "react-pdf": "^4.1.0",
+    "react-resizable-rotatable-draggable": "^0.2.0",
     "redux": "^4.0.1",
     "umi": "^2.13.0",
     "umi-plugin-antd-icon-config": "^1.0.2",

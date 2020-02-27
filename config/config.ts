@@ -111,6 +111,12 @@ export default {
               component: './Welcome',
             },
             {
+              path: '/drr',
+              name: 'drr',
+              icon: 'smile',
+              component: './Drr',
+            },
+            {
               path: '/admin',
               name: 'admin',
               icon: 'crown',
