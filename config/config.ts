@@ -123,6 +123,12 @@ export default {
               component: './DrrAdd',
             },
             {
+              path: '/drr-add2',
+              name: 'drr-add2',
+              icon: 'smile',
+              component: './DrrAdd2',
+            },
+            {
               path: '/admin',
               name: 'admin',
               icon: 'crown',
