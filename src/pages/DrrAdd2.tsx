@@ -54,7 +54,6 @@ class Index extends React.Component {
           this.setState(state => {
             return { ...state }
           })
-          f4()
         },
         handleResize: (style, isShiftKey, type) => {
           let { top, left, width, height } = style
@@ -66,7 +65,6 @@ class Index extends React.Component {
           this.setState(state => {
             return { ...state }
           })
-          f4()
         },
         handleRotate: (rotateAngle: number) => {
           item.rotateAngle = rotateAngle
@@ -74,14 +72,12 @@ class Index extends React.Component {
           this.setState(state => {
             return { ...state }
           })
-          f4()
         }
       }
       drrs.push(item)
       this.setState(state => {
         return { ...state }
       })
-      f4()
     }
 
     const f4 = () => {
@@ -92,7 +88,7 @@ class Index extends React.Component {
 
       const r = Math.sqrt(Math.pow(item.width / 2, 2) + Math.pow(item.height / 2, 2))
       const rotateAngle = item.rotateAngle
-      console.log(`item=>${JSON.stringify(item)}, r=>${r}, `)
+      // console.log(`item=>${JSON.stringify(item)}, r=>${r}, `)
 
       // 以下开始计算四角偏移量
       // 中心点
@@ -123,14 +119,48 @@ class Index extends React.Component {
       const x4 = Math.round(dx4 + x), x3 = Math.round(dx3 + x), x2 = Math.round(dx2 + x), x1 = Math.round(dx1 + x)
       const y4 = Math.round(dy4 + y), y3 = Math.round(dy3 + y), y2 = Math.round(dy2 + y), y1 = Math.round(dy1 + y)
 
-      console.log(`x=>${x}, y=>${y}, dx4=>${dx4}, dy4=>${dy4}, dx3=>${dx3}, dy3=>${dy3}, dx2=>${dx2}, dy2=>${dy2}, dx1=>${dx1}, dy1=>${dy1}, `)
-      console.log(`x4=>${x4}, y4=>${y4}, x3=>${x3}, y3=>${y3}, x2=>${x2}, y2=>${y2}, x1=>${x1}, y1=>${y1}, `)
+      // console.log(`x=>${x}, y=>${y}, dx4=>${dx4}, dy4=>${dy4}, dx3=>${dx3}, dy3=>${dy3}, dx2=>${dx2}, dy2=>${dy2}, dx1=>${dx1}, dy1=>${dy1}, `)
+      // console.log(`x4=>${x4}, y4=>${y4}, x3=>${x3}, y3=>${y3}, x2=>${x2}, y2=>${y2}, x1=>${x1}, y1=>${y1}, `)
+
+      let xmin = x1, ymin = y1, xmax = x1, ymax = y1
+      if (x1 < xmin) xmin = x1
+      if (x2 < xmin) xmin = x2
+      if (x3 < xmin) xmin = x3
+      if (x4 < xmin) xmin = x4
+      if (y4 < ymin) ymin = y4
+      if (y3 < ymin) ymin = y3
+      if (y2 < ymin) ymin = y2
+      if (y1 < ymin) ymin = y1
+      if (x1 > xmax) xmax = x1
+      if (x2 > xmax) xmax = x2
+      if (x3 > xmax) xmax = x3
+      if (x4 > xmax) xmax = x4
+      if (y4 > ymax) ymax = y4
+      if (y3 > ymax) ymax = y3
+      if (y2 > ymax) ymax = y2
+      if (y1 > ymax) ymax = y1
+      return [xmin, ymin, xmax, ymax]
+    }
+
+    const boundary = () => {
+      const [x0, y0, x1, y1] = f4()
+      let dx = 0, dy = 0
+      if (x0 < 0) dx = -x0
+      if (y0 < 0) dy = -y0
+      if (x1 > 400) dx = 400 - x1
+      if (y1 > 400) dy = 400 - y1
+      this.setState(state => {
+        const item = state.drrs[0]
+        item.left += dx
+        item.top += dy
+        return { ...state }
+      })
     }
 
     return (
       <div>
         <Button onClick={add}>add</Button>
-        <Button onClick={f4}>f4</Button>
+        <Button onClick={boundary}>boundary</Button>
         <hr />
         <div style={{ display: 'block', position: 'relative' }}>
           {
@@ -151,8 +181,11 @@ class Index extends React.Component {
                     // zoomable='n, w, s, e, nw, ne, se, sw'
                     // rotatable={true}
                     onRotate={item.handleRotate}
+                    onRotateEnd={boundary}
                     onResize={item.handleResize}
+                    onResizeEnd={boundary}
                     onDrag={item.handleDrag}
+                    onDragEnd={boundary}
                   >
                     <img src={item.src} style={{
                       width: item.width,
