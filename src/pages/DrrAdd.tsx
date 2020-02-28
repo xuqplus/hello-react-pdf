@@ -41,6 +41,8 @@ class Index extends React.Component {
           ...state, pageIndex: i
         }
       })
+      console.log(aRef.pages[0].firstChild.style.width)
+      console.log(aRef.pages[0].firstChild.style.height)
     }
 
     const next = () => {
@@ -54,6 +56,7 @@ class Index extends React.Component {
           ...state, pageIndex: i
         }
       })
+      console.log(aRef.pages[0])
     }
 
     const add = () => {
