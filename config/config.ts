@@ -117,6 +117,12 @@ export default {
               component: './Drr',
             },
             {
+              path: '/drr-add',
+              name: 'drr-add',
+              icon: 'smile',
+              component: './DrrAdd',
+            },
+            {
               path: '/admin',
               name: 'admin',
               icon: 'crown',
