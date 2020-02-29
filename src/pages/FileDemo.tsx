@@ -23,31 +23,52 @@ class Index extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      fileList: []
+      fileList: [],
+      seals: []
     };
   }
 
+  const list = () => {
+    request('/api/v1/seal/list').then(resp => {
+      this.setState(state => {
+        return {
+          ...state, seals: resp
+        }
+      })
+    })
+  }
+
+  componentDidMount = () => {
+    this.list()
+  }
+
   render() {
-    const { fileList } = this.state;
+    const { fileList, seals } = this.state;
 
     const upload = () => {
       const formData = new FormData();
-
-      console.log(this.state)
       fileList.forEach(file => {
         formData.append('files', file);
       });
-
-      this.setState({
-        uploading: true,
-      });
-
       request('/api/v1/file/upload', {
         method: 'post',
         data: formData,
-
       }).then(resp => {
-        console.log(resp)
+        if (resp && resp.length > 0) {
+          resp.map(image => {
+            request('/api/v1/seal/add', {
+              method: 'post',
+              data: {
+                width: 64,
+                height: 64,
+                name: image,
+                filename: image
+              }
+            }).then(() => {
+              this.list()
+            })
+          })
+        }
       })
     }
 
@@ -81,6 +102,20 @@ class Index extends React.Component {
         </Upload>
         <br />
         <Button onClick={upload}>确认上传</Button>
+        <hr />
+        {
+          seals && seals.content && seals.content.map((item, key) => {
+            return (
+              <div>
+                {JSON.stringify(item)} <br />
+                <img alt="图片"
+                  src={`/api/v1/file/download?filename=${item.filename}`}
+                  style={{ width: item.width, height: item.height }}
+                />
+              </div>
+            )
+          })
+        }
       </div>
     )
   }
