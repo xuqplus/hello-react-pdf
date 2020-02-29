@@ -135,6 +135,12 @@ export default {
               component: './FileDemo',
             },
             {
+              path: '/seal',
+              name: 'seal',
+              icon: 'smile',
+              component: './Seal',
+            },
+            {
               path: '/admin',
               name: 'admin',
               icon: 'crown',
