@@ -24,6 +24,82 @@ export interface PdfSign {
   docIndex: number
 }
 
+export interface Stamper {
+  src: string
+  docIndex: number
+  pageIndex: number
+  top: number
+  left: number
+  width: number
+  height: number
+  rotateAngle: number
+  handleRotate: any
+  handleResize: any
+  handleDrag: any
+  boundary: any // 边界处理
+  maxX: number
+  maxY: number
+}
+
+// 计算边界
+const f4 = (item: Stamper) => {
+  if (!item) return
+
+  // 半径
+  const r = Math.sqrt(Math.pow(item.width / 2, 2) + Math.pow(item.height / 2, 2))
+
+  // 以下开始计算四角偏移量
+  // 中心点
+  const x = item.left + item.width / 2
+  const y = item.top + item.height / 2
+  // 弧度
+  const a = Math.PI / 180 * item.rotateAngle
+  // 
+  const a4 = Math.atan(item.height / item.width)
+  const aa4 = a4 + a
+  const dx4 = Math.cos(aa4) * r
+  const dy4 = Math.sin(aa4) * r
+
+  // 
+  const a3 = Math.atan(item.width / item.height)
+  const aa3 = a3 + Math.PI / 2 + a
+  const dx3 = Math.cos(aa3) * r
+  const dy3 = Math.sin(aa3) * r
+
+  //
+  const dx2 = -dx4
+  const dy2 = -dy4
+
+  //
+  const dx1 = -dx3
+  const dy1 = -dy3
+
+  const x4 = Math.round(dx4 + x), x3 = Math.round(dx3 + x), x2 = Math.round(dx2 + x), x1 = Math.round(dx1 + x)
+  const y4 = Math.round(dy4 + y), y3 = Math.round(dy3 + y), y2 = Math.round(dy2 + y), y1 = Math.round(dy1 + y)
+
+  // console.log(`x=>${x}, y=>${y}, dx4=>${dx4}, dy4=>${dy4}, dx3=>${dx3}, dy3=>${dy3}, dx2=>${dx2}, dy2=>${dy2}, dx1=>${dx1}, dy1=>${dy1}, `)
+  // console.log(`x4=>${x4}, y4=>${y4}, x3=>${x3}, y3=>${y3}, x2=>${x2}, y2=>${y2}, x1=>${x1}, y1=>${y1}, `)
+
+  let xmin = x1, ymin = y1, xmax = x1, ymax = y1
+  if (x1 < xmin) xmin = x1
+  if (x2 < xmin) xmin = x2
+  if (x3 < xmin) xmin = x3
+  if (x4 < xmin) xmin = x4
+  if (y4 < ymin) ymin = y4
+  if (y3 < ymin) ymin = y3
+  if (y2 < ymin) ymin = y2
+  if (y1 < ymin) ymin = y1
+  if (x1 > xmax) xmax = x1
+  if (x2 > xmax) xmax = x2
+  if (x3 > xmax) xmax = x3
+  if (x4 > xmax) xmax = x4
+  if (y4 > ymax) ymax = y4
+  if (y3 > ymax) ymax = y3
+  if (y2 > ymax) ymax = y2
+  if (y1 > ymax) ymax = y1
+  return [xmin, ymin, xmax, ymax]
+}
+
 class Index extends React.Component<PdfSign> {
   constructor(props) {
     super(props)
@@ -32,7 +108,8 @@ class Index extends React.Component<PdfSign> {
         documents: []
       },
       uploadFiles: [],
-      seals: []
+      seals: [],
+      stampers: []
     }
   }
 
@@ -51,7 +128,10 @@ class Index extends React.Component<PdfSign> {
   }
 
   render() {
-    const { uploadFiles, pdfSign, seals } = this.state
+    const { uploadFiles, pdfSign, seals, stampers } = this.state
+    const { documents } = pdfSign
+    const hasDoc = documents && documents.length > 0
+    const docIndex = pdfSign && pdfSign.docIndex || 0
 
     // 上传文档
     const upload = () => {
@@ -72,6 +152,78 @@ class Index extends React.Component<PdfSign> {
             return { ...state, uploadFiles: [] }
           })
         }
+      })
+    }
+
+    // 添加印章
+    const addStamper = (stamper) => {
+      console.log(this.state)
+      if (!hasDoc) return
+      const document = documents[docIndex]
+      const pageIndex = document && document.pageIndex || 0
+      const ref = document && document.ref || null
+      if (!ref) return
+      const maxX = Number.parseInt(ref.pages[pageIndex].firstChild.style.width)
+      const maxY = Number.parseInt(ref.pages[pageIndex].firstChild.style.height)
+
+      let left = 0, top = 0
+      // 追随最后印章位置
+      if (stampers && stampers.length > 0) {
+        left = stampers[stampers.length - 1].left + 24
+        top = stampers[stampers.length - 1].top + 24
+      }
+
+      const item: Stamper = {
+        src: stamper.filename,
+        left: left,
+        top: top,
+        width: stamper.width,
+        height: stamper.height,
+        rotateAngle: 0,
+        docIndex,
+        pageIndex,
+        maxX,
+        maxY,
+        handleDrag: (deltaX: number, deltaY: number) => {
+          item.top += deltaY
+          item.left += deltaX
+          this.setState(state => {
+            return { ...state }
+          })
+        },
+        handleResize: (style, isShiftKey, type) => {
+          let { top, left, width, height } = style
+          item.top = Math.round(top)
+          item.left = Math.round(left)
+          item.width = Math.round(width)
+          item.height = Math.round(height)
+          this.setState(state => {
+            return { ...state }
+          })
+        },
+        handleRotate: (rotateAngle: number) => {
+          item.rotateAngle = rotateAngle
+          this.setState(state => {
+            return { ...state }
+          })
+        },
+        boundary: () => {
+          const [x0, y0, x1, y1] = f4(item)
+          let dx = 0, dy = 0
+          if (x0 < 0) dx = -x0
+          if (y0 < 0) dy = -y0
+          if (x1 > item.maxX) dx = item.maxX - x1
+          if (y1 > maxY) dy = maxY - y1
+          this.setState(state => {
+            item.left += dx
+            item.top += dy
+            return { ...state }
+          })
+        }
+      }
+      stampers.push(item)
+      this.setState(state => {
+        return { ...state }
       })
     }
 
@@ -148,15 +300,21 @@ class Index extends React.Component<PdfSign> {
             return { ...state }
           })
         }}>页码++</Button>
+        <Button onClick={() => {
+          this.setState(state => {
+            console.log(this.state)
+            return { ...state }
+          })
+        }}>确认签署</Button>
 
         <hr />
 
         <Row>
           {
-            seals && seals.content && seals.content.map((item, key) => {
+            seals && seals.content && seals.content.map((item, sealIndex) => {
               return (
                 <Card
-                  // hoverable
+                  hoverable={true} key={`seal-${sealIndex}`}
                   style={{ textAlign: 'center', margin: '4px', width: '80px', paddingTop: '4px' }}
                   bodyStyle={{ padding: 0, margin: '10px' }}
                   cover={
@@ -165,7 +323,7 @@ class Index extends React.Component<PdfSign> {
                       style={{ width: item.width, height: item.height, display: 'inline-block' }}
                     />
                   }
-                >
+                  onClick={() => { addStamper(item) }}>
                   <Meta title={item.name} />
                 </Card>
               )
@@ -203,6 +361,45 @@ class Index extends React.Component<PdfSign> {
                     }}>
                     <Page pageIndex={doc.pageIndex || 0} key={`pdf-document-${docIndex}-page`}
                       renderMode="svg" renderTextLayer={false}>
+                      {
+                        // 印章
+                        stampers && stampers.map((stamper: Stamper, stamperIndex) => {
+                          if (hasDoc) {
+                            const document = documents[docIndex]
+                            const { pageIndex } = document
+                            if (stamper.docIndex == docIndex && stamper.pageIndex == pageIndex) {
+                              return (
+                                <Drr
+                                  left={stamper.left}
+                                  top={stamper.top}
+                                  width={stamper.width}
+                                  height={stamper.height}
+                                  rotateAngle={stamper.rotateAngle}
+                                  onRotate={stamper.handleRotate}
+                                  onResize={stamper.handleResize}
+                                  onDrag={stamper.handleDrag}
+                                  onDragEnd={stamper.boundary}
+                                  onResizeEnd={stamper.boundary}
+                                  onRotateEnd={stamper.boundary}
+                                  rotatable={true}
+                                  aspectRatio={true}
+                                  zoomable='n, w, s, e, nw, ne, se, sw'
+                                  key={`stamper-${stamperIndex}-drr`}
+                                >
+                                  <img src={`/api/v1/file/download?filename=${stamper.src}`} key={`stamper-${stamperIndex}-img`}
+                                    style={{
+                                      width: stamper.width,
+                                      height: stamper.height,
+                                      userSelect: "none",
+                                      pointerEvents: "none"
+                                    }} />
+                                </Drr>
+                              )
+                            }
+                          }
+                          return (<div key={`stamper-${stamperIndex}-empty`}></div>)
+                        })
+                      }
                     </Page>
                   </Document>
                 </div>)
@@ -210,7 +407,6 @@ class Index extends React.Component<PdfSign> {
             return (<div key={`pdf-document-${docIndex}-empty`}></div>)
           })
         }
-
       </>
     )
   }
