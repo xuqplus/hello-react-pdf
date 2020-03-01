@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from './Welcome.less';
 import { Document, Page } from 'react-pdf';
-import { Button, Upload, Row, Col, Card } from 'antd';
+import { Button, Upload, Row, Col, Card, message } from 'antd';
 import Drr from '../components/DragResizeRotate';
 import { UploadOutlined } from '@ant-design/icons';
 import request from '@/utils/request';
@@ -25,6 +25,7 @@ export interface PdfSign {
 }
 
 export interface Stamper {
+  id: number
   src: string
   docIndex: number
   pageIndex: number
@@ -157,7 +158,6 @@ class Index extends React.Component<PdfSign> {
 
     // 添加印章
     const addStamper = (stamper) => {
-      console.log(this.state)
       if (!hasDoc) return
       const document = documents[docIndex]
       const pageIndex = document && document.pageIndex || 0
@@ -174,6 +174,7 @@ class Index extends React.Component<PdfSign> {
       }
 
       const item: Stamper = {
+        id: stamper.id,
         src: stamper.filename,
         left: left,
         top: top,
@@ -301,9 +302,46 @@ class Index extends React.Component<PdfSign> {
           })
         }}>页码++</Button>
         <Button onClick={() => {
-          this.setState(state => {
-            console.log(this.state)
-            return { ...state }
+          if (!(pdfSign && pdfSign.documents && pdfSign.documents.length > 0)) {
+            return
+          }
+          console.log(this.state)
+          if (!(stampers && stampers.length > 0)) {
+            return
+          }
+          console.log(this.state)
+          const reqStampers: Stamper[] | any = []
+          const reqDocuments: PdfDocument[] | any = []
+          pdfSign.documents.forEach(doc => {
+            reqDocuments.push({
+              filename: doc.filename
+            })
+          });
+          console.log(reqDocuments)
+          stampers.forEach(stamper => {
+            reqStampers.push({
+              top: stamper.top,
+              left: stamper.left,
+              width: stamper.width,
+              height: stamper.height,
+              rotateAngle: stamper.rotateAngle,
+              sealId: stamper.id,
+              docIndex: stamper.docIndex,
+              pageIndex: stamper.pageIndex,
+            })
+          });
+          console.log(reqStampers)
+          // sign req
+          request("/api/v1/sign", {
+            method: 'post',
+            data: {
+              documents: reqDocuments,
+              stampers: reqStampers
+            }
+          }).then(resp => {
+            message.success(resp || "err")
+          }).catch(e => {
+            console.log(e)
           })
         }}>确认签署</Button>
 
