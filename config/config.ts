@@ -141,6 +141,12 @@ export default {
               component: './Seal',
             },
             {
+              path: '/signed',
+              name: 'signed',
+              icon: 'smile',
+              component: './Signed',
+            },
+            {
               path: '/admin',
               name: 'admin',
               icon: 'crown',
